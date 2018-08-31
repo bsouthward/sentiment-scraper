@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from textblob import TextBlob
 import nltk
 import re
+import time
 
 USER_AGENT = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'}
 
@@ -14,8 +15,9 @@ def google_results_urls(search_term, number_results, language_code, site):
 	assert isinstance(search_term, str), 'Search term must be a string'
 	assert isinstance(number_results, int), 'Number of results must be an integer'
 	assert isinstance(site, str), 'Site must be a string'
+
 	escaped_search_term = search_term.replace(' ', '+')
-	search_in_site = escaped_search_term + '+site:' + site
+	search_in_site = escaped_search_term + ' site:' + site
 	
 	# get google results (normal version)
 	# payload = {'q': search_in_site, 'num': number_results, 'hl': language_code}
@@ -30,7 +32,7 @@ def google_results_urls(search_term, number_results, language_code, site):
 	# only grab HTTP(S) links
 	url_regex = "^https?://"
 	links = [link.get('href') for link in soup.findAll('a', attrs={'href': re.compile(url_regex)})]
-
+	print(links)
 	# see if they're from the right site
 	return [l for l in links if (l.startswith("https://www." + site) or l.startswith("http://www." + site))]
 
@@ -39,14 +41,23 @@ def get_text(search_result_links):
 	that contains strings with the text of each link"""
 	output = []
 	# grab the contents of each link
-	results = [requests.get(l, headers=USER_AGENT) for l in search_result_links]
+	def get_results(search_result_links):
+		results = []
+		for l in search_result_links:
+			results.append(requests.get(l, headers=USER_AGENT))
+			# wait 30 seconds then scrape next link
+			time.sleep(30)
+		return results
+	# one-liner that doesn't pause
+	#results = [requests.get(l, headers=USER_AGENT) for l in search_result_links]
 
 	# pull the text contents for each URL and put each URL's contents in the array as a string
-	for r in results:
+	for r in get_results(search_result_links):
 		soup = BeautifulSoup(r.text, 'html.parser')
-		output.append("".join([p.text for p in soup.find_all("p")]))
-	return output
+		output.append(" ".join([p.text for p in soup.find_all("p")]))
 
+	return output
+	# one-liner
 	#return [BeautifulSoup(r, 'html.parser').get_text() for r in results]
 
 def get_sentiment(text_array):
@@ -79,36 +90,23 @@ def avg_sentence_length(text_array):
 	#return average length
 	return sum(lengths)/len(lengths)
 
+def assemble_results(text_data, label):
+	"""just a dumb way to see the results, will add Bokeh visuals later"""
+	output = ""
+	output += "Average sentiment [polarity, subjectivity] for " + label + "\n"
+	output += get_sentiment(text_data)
+	output += "Average sentence length for " + label + "\n"
+	output += avg_sentence_length(text_data)
+	return output
+
 # let's get some results!
 cnn = get_text(google_results_urls("Trump", 5, "en", "cnn.com"))
 fox = get_text(google_results_urls("Trump", 5, "en", "foxnews.com"))
 usatoday = get_text(google_results_urls("Trump", 5, "en", "usatoday.com"))
-#msnbc = get_text(google_results_urls("Trump", 5, "en", "msnbc.com"))
+msnbc = get_text(google_results_urls("Trump", 5, "en", "msnbc.com"))
 
-# print the things
-print("Average sentiment for CNN [polarity, subjectivity]:")
-print(get_sentiment(cnn))
-print("Average sentence length for CNN:")
-print(avg_sentence_length(cnn))
-print("\n")
-
-"""
-print("Average sentiment for Fox News [polarity, subjectivity]:")
-print(get_sentiment(fox))
-print("Average sentence length for Fox News:")
-print(avg_sentence_length(fox))
-print("\n")
-"""
-
-print("Average sentiment for USA Today [polarity, subjectivity]:")
-print(get_sentiment(usatoday))
-print("Average sentence length for USA Today:")
-print(avg_sentence_length(usatoday))
-print("\n")
-
-"""
-print("Average sentiment for MSNBC [polarity, subjectivity]:")
-print(get_sentiment(msnbc))
-print("Average sentence length for MSNBC:")
-print(avg_sentence_length(msnbc))
-"""
+#print the things
+print(assemble_results(cnn, "CNN"))
+print(assemble_results(fox, "Fox News"))
+print(assemble_results(usatoday, "USA Today"))
+print(assemble_results(msnbc, "MSNBC"))

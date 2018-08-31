@@ -32,27 +32,26 @@ def google_results_urls(search_term, number_results, language_code, site):
 	# only grab HTTP(S) links
 	url_regex = "^https?://"
 	links = [link.get('href') for link in soup.findAll('a', attrs={'href': re.compile(url_regex)})]
-	print(links)
 	# see if they're from the right site
 	return [l for l in links if (l.startswith("https://www." + site) or l.startswith("http://www." + site))]
 
-def get_text(search_result_links):
+def get_text(search_result_links, sleep_time):
 	"""grab the text content of each link in an array, then spit out a new array
 	that contains strings with the text of each link"""
 	output = []
 	# grab the contents of each link
-	def get_results(search_result_links):
+	def get_results(search_result_links, sleep_time=30):
 		results = []
 		for l in search_result_links:
 			results.append(requests.get(l, headers=USER_AGENT))
-			# wait 30 seconds then scrape next link
-			time.sleep(30)
+			# wait N seconds then scrape next link
+			time.sleep(sleep_time)
 		return results
 	# one-liner that doesn't pause
 	#results = [requests.get(l, headers=USER_AGENT) for l in search_result_links]
 
 	# pull the text contents for each URL and put each URL's contents in the array as a string
-	for r in get_results(search_result_links):
+	for r in get_results(search_result_links, 5):
 		soup = BeautifulSoup(r.text, 'html.parser')
 		output.append(" ".join([p.text for p in soup.find_all("p")]))
 
@@ -94,16 +93,17 @@ def assemble_results(text_data, label):
 	"""just a dumb way to see the results, will add Bokeh visuals later"""
 	output = ""
 	output += "Average sentiment [polarity, subjectivity] for " + label + "\n"
-	output += get_sentiment(text_data)
+	output += str(get_sentiment(text_data)) + "\n"
 	output += "Average sentence length for " + label + "\n"
-	output += avg_sentence_length(text_data)
+	output += str(avg_sentence_length(text_data)) + "\n"
 	return output
 
 # let's get some results!
-cnn = get_text(google_results_urls("Trump", 5, "en", "cnn.com"))
-fox = get_text(google_results_urls("Trump", 5, "en", "foxnews.com"))
-usatoday = get_text(google_results_urls("Trump", 5, "en", "usatoday.com"))
-msnbc = get_text(google_results_urls("Trump", 5, "en", "msnbc.com"))
+cnn = get_text(google_results_urls("Trump", 2, "en", "cnn.com"), 5)
+# Fox seems to prefer slower requests
+fox = get_text(google_results_urls("Trump", 2, "en", "foxnews.com"), 30)
+usatoday = get_text(google_results_urls("Trump", 2, "en", "usatoday.com"), 5)
+msnbc = get_text(google_results_urls("Trump", 2, "en", "msnbc.com"), 5)
 
 #print the things
 print(assemble_results(cnn, "CNN"))

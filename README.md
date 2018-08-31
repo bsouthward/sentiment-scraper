@@ -1,0 +1,1 @@
+This conducts a google search for a given string, number of results, language, and site. It then scrapes the URLs from the results, accesses each, does sentiment and other text analysis on the results, and spits out the averages.

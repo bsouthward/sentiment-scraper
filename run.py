@@ -17,19 +17,22 @@ def google_results_urls(search_term, number_results, language_code, site):
 	escaped_search_term = search_term.replace(' ', '+')
 	search_in_site = escaped_search_term + '+site:' + site
 	
-	# get google results
-	payload = {'q': search_in_site, 'num': number_results, 'hl': language_code}
+	# get google results (normal version)
+	# payload = {'q': search_in_site, 'num': number_results, 'hl': language_code}
+
+	# get google results (google news only)
+	payload = {'tbm': 'nws', 'q': search_in_site, 'num': number_results, 'hl': language_code}
 
 	response = requests.get('https://www.google.com/search', params=payload, headers=USER_AGENT)
 
 	soup = BeautifulSoup(response.text, 'html.parser')
 
-	# only grab HTTPs links
+	# only grab HTTP(S) links
 	url_regex = "^https?://"
 	links = [link.get('href') for link in soup.findAll('a', attrs={'href': re.compile(url_regex)})]
 
 	# see if they're from the right site
-	return [l for l in links if l.startswith("https://www." + site) or l.startswith("http://www." + site)]
+	return [l for l in links if (l.startswith("https://www." + site) or l.startswith("http://www." + site))]
 
 def get_text(search_result_links):
 	"""grab the text content of each link in an array, then spit out a new array
@@ -77,16 +80,35 @@ def avg_sentence_length(text_array):
 	return sum(lengths)/len(lengths)
 
 # let's get some results!
-cnn = get_text(google_results_urls("Trump", 2, "en", "cnn.com"))
-fox = get_text(google_results_urls("Trump", 2, "en", "foxnews.com"))
+cnn = get_text(google_results_urls("Trump", 5, "en", "cnn.com"))
+fox = get_text(google_results_urls("Trump", 5, "en", "foxnews.com"))
+usatoday = get_text(google_results_urls("Trump", 5, "en", "usatoday.com"))
+#msnbc = get_text(google_results_urls("Trump", 5, "en", "msnbc.com"))
 
 # print the things
 print("Average sentiment for CNN [polarity, subjectivity]:")
 print(get_sentiment(cnn))
 print("Average sentence length for CNN:")
 print(avg_sentence_length(cnn))
+print("\n")
 
+"""
 print("Average sentiment for Fox News [polarity, subjectivity]:")
 print(get_sentiment(fox))
 print("Average sentence length for Fox News:")
 print(avg_sentence_length(fox))
+print("\n")
+"""
+
+print("Average sentiment for USA Today [polarity, subjectivity]:")
+print(get_sentiment(usatoday))
+print("Average sentence length for USA Today:")
+print(avg_sentence_length(usatoday))
+print("\n")
+
+"""
+print("Average sentiment for MSNBC [polarity, subjectivity]:")
+print(get_sentiment(msnbc))
+print("Average sentence length for MSNBC:")
+print(avg_sentence_length(msnbc))
+"""

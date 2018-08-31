@@ -99,14 +99,15 @@ def assemble_results(text_data, label):
 	return output
 
 # let's get some results!
-cnn = get_text(google_results_urls("Trump", 2, "en", "cnn.com"), 5)
+# reminder: params are search string, number of results pages, language, URL to scrape for
+cnn = get_text(google_results_urls("immigration", 3, "en", "cnn.com"), 5)
 # Fox seems to prefer slower requests
-fox = get_text(google_results_urls("Trump", 2, "en", "foxnews.com"), 30)
-usatoday = get_text(google_results_urls("Trump", 2, "en", "usatoday.com"), 5)
-msnbc = get_text(google_results_urls("Trump", 2, "en", "msnbc.com"), 5)
+fox = get_text(google_results_urls("immigration", 3, "en", "foxnews.com"), 5)
+#usatoday = get_text(google_results_urls("Trump", 2, "en", "usatoday.com"), 5)
+#msnbc = get_text(google_results_urls("Trump", 2, "en", "msnbc.com"), 5)
 
 #print the things
 print(assemble_results(cnn, "CNN"))
 print(assemble_results(fox, "Fox News"))
-print(assemble_results(usatoday, "USA Today"))
-print(assemble_results(msnbc, "MSNBC"))
+#print(assemble_results(usatoday, "USA Today"))
+#print(assemble_results(msnbc, "MSNBC"))

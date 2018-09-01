@@ -7,7 +7,7 @@ import nltk
 import re
 import time
 
-USER_AGENT = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'}
+USER_AGENT = {'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36'}
 
 def google_results_urls(search_term, number_results, language_code, site):
 	"""returns an array of URLs from the google results for a search string"""
@@ -16,14 +16,10 @@ def google_results_urls(search_term, number_results, language_code, site):
 	assert isinstance(number_results, int), 'Number of results must be an integer'
 	assert isinstance(site, str), 'Site must be a string'
 
-	escaped_search_term = search_term.replace(' ', '+')
-	search_in_site = escaped_search_term + ' site:' + site
-	
-	# get google results (normal version)
-	# payload = {'q': search_in_site, 'num': number_results, 'hl': language_code}
+	query_string = search_term.replace(' ', '+') + ' site:' + site
 
-	# get google results (google news only)
-	payload = {'tbm': 'nws', 'q': search_in_site, 'num': number_results, 'hl': language_code}
+	# get google results (tbm: nws means google news only)
+	payload = {'tbm': 'nws', 'q': query_string, 'num': number_results, 'hl': language_code}
 
 	response = requests.get('https://www.google.com/search', params=payload, headers=USER_AGENT)
 
@@ -102,7 +98,7 @@ def assemble_results(text_data, label):
 # reminder: params are search string, number of results pages, language, URL to scrape for
 cnn = get_text(google_results_urls("immigration", 3, "en", "cnn.com"), 5)
 # Fox seems to prefer slower requests
-fox = get_text(google_results_urls("immigration", 3, "en", "foxnews.com"), 5)
+fox = get_text(google_results_urls("immigration", 3, "en", "foxnews.com"), 10)
 #usatoday = get_text(google_results_urls("Trump", 2, "en", "usatoday.com"), 5)
 #msnbc = get_text(google_results_urls("Trump", 2, "en", "msnbc.com"), 5)
 
